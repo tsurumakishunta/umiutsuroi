@@ -8,12 +8,13 @@
 }
 
 html,
-body {
+body,
+#root {
   width: 100%;
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: var(--night);
+  background-color: var(--night);
 }
 
 body {
@@ -25,8 +26,11 @@ body {
   position: fixed;
   inset: 0;
   isolation: isolate;
+  contain: strict;
   overflow: hidden;
-  background:
+  opacity: 1;
+  background-color: var(--night);
+  background-image:
     linear-gradient(180deg, #5c8099 0%, var(--horizon) 47%, #071923 48%, var(--night) 100%);
 }
 
@@ -34,8 +38,8 @@ body {
   display: block;
   width: 100%;
   height: 100%;
-  opacity: 0;
-  animation: ocean-arrival 2.4s ease-out forwards;
+  opacity: 1;
+  background-color: #07121b;
 }
 
 .ocean-experience::after {
@@ -47,7 +51,6 @@ body {
   background:
     radial-gradient(circle at 50% 42%, transparent 35%, rgb(1 8 14 / 12%) 100%),
     linear-gradient(180deg, rgb(3 11 18 / 8%), transparent 28%, transparent 76%, rgb(1 8 12 / 22%));
-  mix-blend-mode: multiply;
 }
 
 .ocean-experience[data-fallback="true"]::before {
@@ -61,16 +64,12 @@ body {
   animation: fallback-tide 8s ease-in-out infinite alternate;
 }
 
-@keyframes ocean-arrival {
-  to { opacity: 1; }
-}
-
 @keyframes fallback-tide {
   to { transform: translate3d(2%, -1.5%, 0) scale(1.02); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ocean-experience canvas {
-    animation-duration: 0.01ms;
+  .ocean-experience[data-fallback="true"]::before {
+    animation: none;
   }
 }
