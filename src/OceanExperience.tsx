@@ -491,6 +491,8 @@ export function OceanExperience() {
     try {
       renderer = new THREE.WebGLRenderer({
         antialias: true,
+        alpha: false,
+        premultipliedAlpha: false,
         powerPreference: "high-performance",
       });
     } catch {
@@ -515,6 +517,7 @@ export function OceanExperience() {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.9;
     renderer.setClearColor(0x07121b, 1);
+    renderer.setClearAlpha(1);
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
