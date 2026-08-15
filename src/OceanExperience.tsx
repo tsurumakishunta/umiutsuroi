@@ -46,8 +46,7 @@ type Situation = {
   horizon: number;
   sea: number;
   deep: number;
-  sun: number;
-  sunDirection: readonly [number, number, number];
+  light: number;
   stars: number;
   exposure: number;
   waveScale: number;
@@ -59,8 +58,7 @@ const SITUATIONS: readonly Situation[] = [
     horizon: 0xf4c8a9,
     sea: 0x06b6c9,
     deep: 0x004e78,
-    sun: 0xffd6a1,
-    sunDirection: [-0.82, 0.18, -0.54],
+    light: 0xffd6a1,
     stars: 0,
     exposure: 0.9,
     waveScale: 0.64,
@@ -70,8 +68,7 @@ const SITUATIONS: readonly Situation[] = [
     horizon: 0xbfe9ed,
     sea: 0x02c4d6,
     deep: 0x00578f,
-    sun: 0xfff6d5,
-    sunDirection: [-0.18, 0.92, -0.34],
+    light: 0xfff6d5,
     stars: 0,
     exposure: 0.94,
     waveScale: 0.58,
@@ -81,8 +78,7 @@ const SITUATIONS: readonly Situation[] = [
     horizon: 0xe58358,
     sea: 0x0799b5,
     deep: 0x053c63,
-    sun: 0xffa35c,
-    sunDirection: [0.84, 0.14, -0.5],
+    light: 0xffa35c,
     stars: 0,
     exposure: 0.86,
     waveScale: 0.72,
@@ -92,8 +88,7 @@ const SITUATIONS: readonly Situation[] = [
     horizon: 0x162b42,
     sea: 0x0b5275,
     deep: 0x02172e,
-    sun: 0xc6ddff,
-    sunDirection: [0.48, 0.26, -0.84],
+    light: 0xc6ddff,
     stars: 0.95,
     exposure: 0.64,
     waveScale: 0.65,
@@ -285,10 +280,6 @@ const SKY_FRAGMENT = `
 
   uniform vec3 uHorizonColor;
   uniform vec3 uZenithColor;
-  uniform vec3 uSunColor;
-  uniform vec3 uSunDirection;
-  uniform float uStars;
-  uniform float uTime;
 
   in vec3 vDirection;
   out vec4 outColor;
@@ -298,12 +289,6 @@ const SKY_FRAGMENT = `
     float height = clamp(direction.y, 0.0, 1.0);
     float gradient = pow(height, 0.42);
     vec3 color = mix(uHorizonColor, uZenithColor, gradient);
-
-    float sunAlignment = max(dot(direction, normalize(uSunDirection)), 0.0);
-    float sunDisc = smoothstep(0.9993, 0.99978, sunAlignment);
-    float sunHalo = pow(sunAlignment, 96.0);
-    float daylight = 1.0 - smoothstep(0.08, 0.72, uStars);
-    color += uSunColor * (sunDisc * 2.1 + sunHalo * 0.42) * daylight;
 
     color = color / (color + vec3(0.72));
     color = pow(max(color, vec3(0.0)), vec3(1.0 / 2.2));
@@ -584,8 +569,6 @@ export function OceanExperience() {
     const atmosphereUniforms = {
       uHorizonColor: { value: new THREE.Color(SITUATIONS[0].horizon) },
       uZenithColor: { value: new THREE.Color(SITUATIONS[0].zenith) },
-      uSunColor: { value: new THREE.Color(SITUATIONS[0].sun) },
-      uSunDirection: { value: new THREE.Vector3(...SITUATIONS[0].sunDirection).normalize() },
       uStars: { value: SITUATIONS[0].stars },
       uTime: { value: 0 },
     };
@@ -729,8 +712,8 @@ export function OceanExperience() {
       textureWidth: OCEAN_CONFIG.reflectionResolution,
       textureHeight: OCEAN_CONFIG.reflectionResolution,
       waterNormals: neutralWaterNormals,
-      sunDirection: atmosphereUniforms.uSunDirection.value,
-      sunColor: SITUATIONS[0].sun,
+      sunDirection: new THREE.Vector3(-0.35, 0.78, -0.52).normalize(),
+      sunColor: SITUATIONS[0].light,
       waterColor: SITUATIONS[0].sea,
       distortionScale: 2.6,
       fog: false,
@@ -860,8 +843,6 @@ export function OceanExperience() {
 
     const colorA = new THREE.Color();
     const colorB = new THREE.Color();
-    const sunA = new THREE.Vector3();
-    const sunB = new THREE.Vector3();
     const timer = new THREE.Timer();
     timer.connect(document);
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -914,13 +895,9 @@ export function OceanExperience() {
 
       mixColor(atmosphereUniforms.uHorizonColor.value, current.horizon, next.horizon);
       mixColor(atmosphereUniforms.uZenithColor.value, current.zenith, next.zenith);
-      mixColor(atmosphereUniforms.uSunColor.value, current.sun, next.sun);
-      mixColor(oceanMaterial.uniforms.sunColor.value, current.sun, next.sun);
+      mixColor(oceanMaterial.uniforms.sunColor.value, current.light, next.light);
       mixColor(oceanMaterial.uniforms.waterColor.value, current.sea, next.sea);
       mixColor(oceanUniforms.uDeepColor.value, current.deep, next.deep);
-      sunA.set(...current.sunDirection).normalize();
-      sunB.set(...next.sunDirection).normalize();
-      atmosphereUniforms.uSunDirection.value.copy(sunA).lerp(sunB, blend).normalize();
       atmosphereUniforms.uStars.value = THREE.MathUtils.lerp(current.stars, next.stars, blend);
       oceanUniforms.uDaylight.value = 1 - atmosphereUniforms.uStars.value;
       const minutePhase = (Math.max(0, elapsed) % OCEAN_CONFIG.waveCycleSeconds)
